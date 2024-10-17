@@ -1,0 +1,105 @@
+﻿@page "/genre/list"
+@using BlazerApp1.Data;
+@using MySql.Data.MySqlClient;
+@inject NavigationManager NavigationManager;
+<PageTitle>List of Genre</PageTitle>
+    <h3 class="text-primary">Genre List</h3>
+    <div class="container">
+       
+        <div class="row">
+            <div col="col-12">
+                <Button Type="ButtonType.Link" Class="btn btn-primary" To="genre/create">Create</Button>
+            </div>
+        </div>
+        <div class="row">
+            <div col="col-12">
+                <Grid TItem="Genre"
+                      Class="table table-hover table-bordered"
+                      DataProvider="GenreDataProvider"
+                      AllowFiltering="true"
+                      AllowPaging="true"
+                      PageSize="10"
+                      AllowSorting="true"
+                      AllowSelection="true"
+                      Responsive="true">
+
+                <GridColumn TItem="Genre" HeaderText="Id" PropertyName="Id" SortKeySelector="item => item.Id">
+                        @context.Id
+                    </GridColumn>
+                <GridColumn TItem="Genre" HeaderText="Genre Name" PropertyName="Name" SortKeySelector="item => item.Name">
+                        @context.Name
+                    </GridColumn>
+               
+                <GridColumn TItem="Genre" HeaderText="Action">
+                        <Button Type="ButtonType.Link" Color="ButtonColor.Primary" Class="me-1" To="@($"genre/edit/{context.Id}")">Edit</Button>
+                        <Button Type="ButtonType.Button" Color="ButtonColor.Danger" @onclick="(Id) => DeleteGenre(context.Id)">Delete</Button>
+                    </GridColumn>
+
+                </Grid>
+            </div>
+        </div>
+    </div>
+ 
+@code {
+    public List<Genre> listGenre;
+
+    /*protected override void OnInitialized()
+        {
+        listCategory = GetCategories();
+    }*/
+
+    private async Task<GridDataProviderResult<Genre>> GenreDataProvider(GridDataProviderRequest<Genre> request)
+    {
+        if(listGenre is null)
+        {
+            listGenre = GetCategories();
+        }
+        return await Task.FromResult(request.ApplyTo(listGenre));
+    }
+
+    private List<Genre> GetCategories()
+    {
+        List<Genre> list = new List<Genre>();
+        try
+        {
+            string SqlGetGenres = "Select * From genres Order by id";
+            MySqlConnection conn = DbMySQLUltil.GetMySqlConnection();
+            conn.Open();
+            MySqlCommand cmd = conn.CreateCommand();
+            cmd.CommandText = SqlGetGenres;
+            MySqlDataReader mySqlDataReader = cmd.ExecuteReader();
+            while (mySqlDataReader.Read())
+            {
+                int Id = mySqlDataReader.GetInt32("id");
+                string Name = mySqlDataReader.GetString("name");
+                Genre g = new Genre(Id, Name);
+                list.Add(g);
+            }
+            conn.Close();
+        }catch(Exception e)
+        {
+            Console.WriteLine(e.Message);
+        }
+        return list ;
+    }
+
+    private void DeleteGenre(int id)
+    {
+        try
+        {
+            string SqlUpdateCategory = $"DELETE FROM genres WHERE id={id}";
+            MySqlConnection conn = DbMySQLUltil.GetMySqlConnection();
+            conn.Open();
+            MySqlCommand cmd = conn.CreateCommand();
+            cmd.CommandText = SqlUpdateCategory;
+            cmd.ExecuteNonQuery();
+            conn.Close();
+
+            listGenre = listGenre.Where(g => g.Id != id).ToList();
+            NavigationManager.NavigateTo("/genre/list");
+        }catch(Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+        }
+    }
+}

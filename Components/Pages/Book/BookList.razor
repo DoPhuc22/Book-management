@@ -1,0 +1,193 @@
+﻿@page "/book/list"
+@using BlazerApp1.Data;
+@using MySql.Data.MySqlClient;
+@inject NavigationManager NavigationManager;
+<PageTitle>List of Book</PageTitle>
+    <h3 class="text-primary">Book List</h3>
+    <div class="container">
+       
+        <div class="row">
+            <div col="col-12">
+                <Button Type="ButtonType.Link" Class="btn btn-primary" To="book/create"><Icon Name="IconName.PlusCircle"></Icon> Create</Button>
+            </div>
+        </div>
+        <div class="row">
+            <div col="col-12">
+                <Grid TItem="Book"
+                      Class="table table-hover table-bordered"
+                      DataProvider="BookDataProvider"
+                      AllowFiltering="false"
+                      AllowPaging="true"
+                      PageSize="10"
+                      AllowSorting="true"
+                      AllowSelection="false"
+                      Responsive="true"
+                  ItemsPerPageText="3"
+                  PageSizeSelectorItems="new int[] { 5, 10, 20 }">
+
+                <GridColumn TItem="Book" HeaderText="Id" PropertyName="Id" SortKeySelector="item => item.Id">
+                        @context.Id
+                    </GridColumn>
+                <GridColumn TItem="Book" HeaderText="Title" PropertyName="Title" SortKeySelector="item => item.Title">
+                        @context.Title
+                </GridColumn>
+                <GridColumn TItem="Book" HeaderText="Author" PropertyName="Author" SortKeySelector="item => item.Image">
+                        @context.Image
+                </GridColumn>
+                <GridColumn TItem="Book" HeaderText="Genre" PropertyName="Genre_id" SortKeySelector="item => item.PublishedYear">
+                    @{
+                        try
+                        {
+                            string SqlGetGenre = String.Format($"SELECT * FROM genres WHERE id = {context.PublishedYear}");
+                            MySqlConnection conn1 = DbMySQLUltil.GetMySqlConnection();
+                            MySqlCommand cmd1 = conn1.CreateCommand();
+                            conn1.Open();
+                            cmd1.CommandText = SqlGetGenre;
+                            MySqlDataReader mySqlDataReader1 = cmd1.ExecuteReader();
+                            while (mySqlDataReader1.Read())
+                            {
+                                GId = mySqlDataReader1.GetInt32("id");
+                                GName = mySqlDataReader1.GetString("name");
+                            }
+                            conn1.Close();
+                        }
+                        catch (Exception e)
+                        {
+                            Console.WriteLine(e.Message);
+                        }
+                    }
+                    @if (GName != "" && GName != null && context.PublishedYear != 0)
+                    {
+                        @GName
+                    }
+                </GridColumn>
+                <GridColumn TItem="Book" HeaderText="Published Year" PropertyName="PublishedYear" SortKeySelector="item => item.Genre_id">
+                    @context.Genre_id
+                </GridColumn>
+                <GridColumn TItem="Book" HeaderText="Status" PropertyName="Status" SortKeySelector="item => item.Status">
+                    @if (context.Status == 1)
+                    {
+                        <Badge Color="BadgeColor.Success" IndicatorType="BadgeIndicatorType.None"><Icon Name="IconName.CheckCircle"></Icon> Active</Badge>
+                    }
+                    else
+                    {
+                        <Badge Color="BadgeColor.Danger" IndicatorType="BadgeIndicatorType.None"><Icon Name="IconName.XCircle"></Icon> Deleted</Badge>
+                    }
+                </GridColumn>
+                <GridColumn TItem="Book" HeaderText="Image" Class="w-25" PropertyName="Image" SortKeySelector="item => item.Author">
+                    <img src="@context.Author" style="width: 150px" class="mw-100 rounded-3" alt="Book Image" />
+                </GridColumn>
+                <GridColumn TItem="Book" HeaderText="Action">
+                        <Button Type="ButtonType.Link" Color="ButtonColor.Primary" Class="me-1" To="@($"book/edit/{context.Id}")">Edit</Button>
+                    @if(context.Status == 0)
+                    {
+                        <Button Disabled Type="ButtonType.Button" Color="ButtonColor.Danger" @onclick="(Id) => DeleteBook(context.Id)">Delete</Button>
+                    }
+                    else
+                    {
+                        <Button Type="ButtonType.Button" Color="ButtonColor.Danger" @onclick="(Id) => DeleteBook(context.Id)">Delete</Button>
+                    }
+                    
+                    </GridColumn>
+
+                </Grid>
+            </div>
+        </div>
+    </div>
+ 
+@code {
+    private int GId;
+    private string GName;
+    private IEnumerable<Book> books = default!;
+    /*protected override void OnInitialized()
+        {
+        listCategory = GetCategories();
+    }*/
+    private HashSet<Book> selectedBooks = new();
+
+    private async Task<GridDataProviderResult<Book>> BookDataProvider(GridDataProviderRequest<Book> request)
+    {
+        if (books is null) // pull employees only one time for client-side filtering, sorting, and paging
+            books = GetBooks(); // call a service or an API to pull the employees
+
+        return await Task.FromResult(request.ApplyTo(books));
+    }
+
+
+    private IEnumerable<Book> GetBooks()
+    {
+        List<Book> list = new List<Book>();
+        try
+        {
+            string SqlGetBooks = String.Format("Select * From books");
+            MySqlConnection conn = DbMySQLUltil.GetMySqlConnection();
+            conn.Open();
+            MySqlCommand cmd = conn.CreateCommand();
+            cmd.CommandText = SqlGetBooks;
+            MySqlDataReader mySqlDataReader = cmd.ExecuteReader();
+            while (mySqlDataReader.Read())
+            {
+                int Id = mySqlDataReader.GetInt32("id");
+                string Title = mySqlDataReader.GetString("title");
+                int Status = mySqlDataReader.GetInt32("status");
+                string Author = mySqlDataReader.GetString("author");
+                int PublishedYear = mySqlDataReader.GetInt32("publishedYear");
+                int genreId = mySqlDataReader.GetInt32("genre_id");
+                string Image = mySqlDataReader.GetString("image");
+                Book b = new Book(Id, Title, Status, Author, PublishedYear, genreId, Image);
+                list.Add(b);
+            }
+            conn.Close();
+        }catch(Exception e)
+        {
+            Console.WriteLine(e.Message);
+        }
+        return list ;
+    }
+
+    private Task OnSelectedItemsChanged(HashSet<Book> books)
+    {
+        selectedBooks = books is not null && books.Any() ? books : new();
+        return Task.CompletedTask;
+    }
+
+
+    private void DeleteBook(int Id)
+    {
+        var conn = DbMySQLUltil.GetMySqlConnection();
+        try
+        {
+            // find
+            conn.Open();
+
+            string sqlGetBook = $"SELECT * FROM books WHERE id = {Id}";
+            MySqlCommand cmd = conn.CreateCommand();
+            cmd.CommandText = sqlGetBook;
+            MySqlDataReader mySqlDataReader = cmd.ExecuteReader();
+            if (mySqlDataReader.Read())
+            {
+                // delete
+                var conn2 = DbMySQLUltil.GetMySqlConnection();
+                try
+                {
+                    conn2.Open();
+                    string SqlDelete = $"UPDATE books SET status = 0 WHERE id = {Id}";
+                    MySqlCommand cmd2 = new MySqlCommand(SqlDelete, conn2);
+                    cmd2.ExecuteNonQuery();
+                    conn2.Close();
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e.Message);
+                }
+            }
+
+            conn.Close();
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e.Message);
+        }
+        NavigationManager.NavigateTo("/book/list", forceLoad: true);
+    }
+}

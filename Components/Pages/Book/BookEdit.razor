@@ -1,0 +1,210 @@
+﻿@page "/book/edit/{id:int}"
+@using BlazerApp1.Data
+@using MySql.Data.MySqlClient;
+@inject NavigationManager NavigationManager;
+<PageTitle>Edit book</PageTitle>
+<h3 class="text-primary">BookEdit: @book.Title - #@book.Id</h3>
+<div class="container">
+    <div class="">
+        <div class="col-12">
+            <EditForm Model="book" OnValidSubmit="HandleUpdateBook">
+                <DataAnnotationsValidator />
+                <div class="row col-md-12">
+                    <div class="mb-3 col-md-6">
+                        <label class="form-label">Title</label>
+                        <InputText class="form-control" @bind-Value=book.Title />
+                        <div class="text-danger">
+                            <ValidationMessage For="() => book.Title"></ValidationMessage>
+                        </div>
+                    </div>
+                    <div class="mb-3 col-md-6">
+                        <label class="form-label">Author</label>
+                        <InputText class="form-control" @bind-Value=book.Author />
+                        <ValidationMessage For="() => book.Author"></ValidationMessage>
+                    </div>
+                </div>
+                <div class="row col-md-12">
+                    <div class="mb-3 col-md-6">
+                        <label class="form-label">Published Year</label>
+                        <InputNumber class="form-control" @bind-Value=book.PublishedYear />
+                        <ValidationMessage For="() => book.PublishedYear"></ValidationMessage>
+                    </div>
+                    <div class="mb-3 col-md-6">
+                        <label class="form-label">Status</label>
+                        <InputSelect class="form-control" @bind-Value=book.Status>
+                            <option value="1" selected="@(book.Status==1)">Active</option>
+                            <option value="0" selected="@(book.Status==0)">Deleted</option>
+                        </InputSelect>
+                        <ValidationMessage For="() => book.Status"></ValidationMessage>
+                    </div>
+                </div>
+                
+                <div class="row mb-3 col-md-12">
+                    <div class="col-md-6">
+                        <label for="Genre" class="form-label">Genre</label>
+                        <InputSelect @bind-Value=book.Genre_id class="form-select" id="SelectGenre">
+                            <option value="0" selected>-- Choose a genre --</option>
+                            @foreach (var g in genres)
+                            {
+                                <option value="@g.Id" selected="@(book.Genre_id == g.Id)">@g.Name</option>
+                            }
+                        </InputSelect>
+                        <div class="text-danger">
+                            <ValidationMessage For="() => book.Genre_id" />
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        
+                            <label for="Image" class="form-label">Image</label>
+                            <InputFile OnChange="HandleFileSelected" @bind-Value=book.Image class="form-control" />
+                            @if (ImageDataUrl != null)
+                            {
+                                <img src="@ImageDataUrl" class="mt-3" style="max-width: 500px" />
+                            }
+                       
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <Button Type="ButtonType.Submit" Color="ButtonColor.Primary">Save</Button>
+                    <Button Type="ButtonType.Link" To="book/list" Color="ButtonColor.Secondary">Back</Button>
+                </div>
+
+            </EditForm>
+        </div>
+    </div>
+</div>
+@code {
+    [Parameter]
+    public int id { get; set; }
+
+
+    Book book = new Book();
+
+    List<Genre> genres = new List<Genre>();
+    private string ImageDataUrl = "";
+    private IBrowserFile selectedFile;
+    protected override void OnParametersSet()
+    {
+        if (id != 0)
+        {
+            book = GetBook(id);
+            GetGenres();
+        }
+    }
+
+    public Book GetBook(int id)
+    {
+        Book b = new Book();
+        try
+        {
+            string SqlGetBook = $"SELECT * FROM books WHERE id = {id}";
+            MySqlConnection conn = DbMySQLUltil.GetMySqlConnection();
+            conn.Open();
+            MySqlCommand cmd = conn.CreateCommand();
+            cmd.CommandText = SqlGetBook;
+            MySqlDataReader reader = cmd.ExecuteReader();
+            if (reader.Read())
+            {
+                b.Id = reader.GetInt32("id");
+                b.Title = reader.GetString("title");
+                b.Status = reader.GetInt32("status");
+                b.Author = reader.GetString("author");
+                b.Image = reader.GetString("image");
+                b.Genre_id = reader.GetInt32("genre_id");
+                b.PublishedYear = reader.GetInt32("publishedYear");
+
+            }
+            conn.Close();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+        }
+        return b;
+    }
+
+    public void GetGenres()
+    {
+        var conn = DbMySQLUltil.GetMySqlConnection();
+        try
+        {
+            conn.Open();
+            string sqlGetGenres = "SELECT * FROM genres";
+            MySqlCommand cmd = conn.CreateCommand();
+            cmd.CommandText = sqlGetGenres;
+            MySqlDataReader mySqlDataReader = cmd.ExecuteReader();
+            while (mySqlDataReader.Read())
+            {
+                Genre g = new Genre();
+                g.Id = mySqlDataReader.GetInt32("id");
+                g.Name = mySqlDataReader.GetString("name");
+                genres.Add(g);
+            }
+
+            conn.Close();
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e.Message);
+        }
+
+        foreach (var g in genres)
+        {
+            Console.WriteLine(g.Name);
+        }
+    }
+
+    private async Task HandleFileSelected(InputFileChangeEventArgs e)
+    {
+        selectedFile = e.File;
+        var resizeFile = await e.File.RequestImageFileAsync("image/jpeg", 500, 500);
+        var buffer = new byte[resizeFile.Size];
+        await resizeFile.OpenReadStream().ReadAsync(buffer);
+        ImageDataUrl = $"data:image/jpeg;base64,{Convert.ToBase64String(buffer)}";
+    }
+
+    private async Task SaveImageToServer(IBrowserFile file)
+    {
+        if (file != null)
+        {
+            var FileName = file.Name;
+            var folderPath = Path.Combine("wwwroot", "uploads"); //wwwroot/uploads
+            var filePath = Path.Combine(folderPath, FileName); //wwwroot/uploads/...
+            Directory.CreateDirectory(folderPath);
+            using (var fileStream = new FileStream(filePath, FileMode.Create))
+            {
+                await file.OpenReadStream().CopyToAsync(fileStream);
+            }
+            book.Image = $"uploads/{FileName}";
+        }
+    }
+    
+    protected async void HandleUpdateBook()
+    {
+        await SaveImageToServer(selectedFile);
+        string Title = book.Title;
+        int Status = book.Status;
+        string Author = book.Author;
+        string Image = book.Image;
+        int Genre_id = book.Genre_id;
+        int PublishedYear = book.PublishedYear;
+
+        try
+        {
+            string SqlUpdateCategory = $"UPDATE books SET title = '{Title}', status = {Status}, author = '{Author}', image = '{Image}', genre_id = '{Genre_id}',publishedYear = '{PublishedYear}' WHERE id = {id}";
+            MySqlConnection conn = DbMySQLUltil.GetMySqlConnection();
+            conn.Open();
+            MySqlCommand cmd = conn.CreateCommand();
+            cmd.CommandText = SqlUpdateCategory;
+            cmd.ExecuteNonQuery();
+            conn.Close();
+            NavigationManager.NavigateTo("/book/list");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+        }
+    }
+}
+﻿

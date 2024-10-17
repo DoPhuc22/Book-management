@@ -1,0 +1,57 @@
+{
+  "Files": [
+    {
+      "Id": "D:\\Sophomore\\C#\\Project\\BlazerApp1\\obj\\Debug\\net8.0\\scopedcss\\projectbundle\\BlazerApp1.bundle.scp.css",
+      "PackagePath": "staticwebassets\\BlazerApp1.bundle.scp.css"
+    },
+    {
+      "Id": "D:\\Sophomore\\C#\\Project\\BlazerApp1\\wwwroot\\app.css",
+      "PackagePath": "staticwebassets\\app.css"
+    },
+    {
+      "Id": "D:\\Sophomore\\C#\\Project\\BlazerApp1\\wwwroot\\bootstrap\\bootstrap.min.css",
+      "PackagePath": "staticwebassets\\bootstrap\\bootstrap.min.css"
+    },
+    {
+      "Id": "D:\\Sophomore\\C#\\Project\\BlazerApp1\\wwwroot\\bootstrap\\bootstrap.min.css.map",
+      "PackagePath": "staticwebassets\\bootstrap\\bootstrap.min.css.map"
+    },
+    {
+      "Id": "D:\\Sophomore\\C#\\Project\\BlazerApp1\\wwwroot\\favicon.png",
+      "PackagePath": "staticwebassets\\favicon.png"
+    },
+    {
+      "Id": "D:\\Sophomore\\C#\\Project\\BlazerApp1\\wwwroot\\test.css",
+      "PackagePath": "staticwebassets\\test.css"
+    },
+    {
+      "Id": "D:\\Sophomore\\C#\\Project\\BlazerApp1\\wwwroot\\uploads\\1.jpg",
+      "PackagePath": "staticwebassets\\uploads\\1.jpg"
+    },
+    {
+      "Id": "D:\\Sophomore\\C#\\Project\\BlazerApp1\\wwwroot\\uploads\\1.png",
+      "PackagePath": "staticwebassets\\uploads\\1.png"
+    },
+    {
+      "Id": "D:\\Sophomore\\C#\\Project\\BlazerApp1\\wwwroot\\uploads\\zalo.jpg",
+      "PackagePath": "staticwebassets\\uploads\\zalo.jpg"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.BlazerApp1.Microsoft.AspNetCore.StaticWebAssets.props",
+      "PackagePath": "build\\Microsoft.AspNetCore.StaticWebAssets.props"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.build.BlazerApp1.props",
+      "PackagePath": "build\\BlazerApp1.props"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.buildMultiTargeting.BlazerApp1.props",
+      "PackagePath": "buildMultiTargeting\\BlazerApp1.props"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.buildTransitive.BlazerApp1.props",
+      "PackagePath": "buildTransitive\\BlazerApp1.props"
+    }
+  ],
+  "ElementsToRemove": []
+}

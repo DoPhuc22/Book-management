@@ -1,0 +1,83 @@
+﻿@page "/genre/edit/{id:int}"
+@using BlazerApp1.Data
+@using MySql.Data.MySqlClient;
+@inject NavigationManager NavigationManager;
+<h3 class="text-primary">GenreEdit: @genre.Name - #@genre.Id</h3>
+<div class="container">
+    <div class="row">
+        <div class="col-12">
+            <EditForm Model="genre" OnValidSubmit="HandleUpdateGenre">
+                <DataAnnotationsValidator />
+                <div class="mb-3">
+                    <label class="form-label">Name</label>
+                    <InputText class="form-control" @bind-Value=genre.Name />
+                    <ValidationMessage For="() => genre.Name"></ValidationMessage>
+                </div>
+                <div class="mb-3">
+                    <Button Type="ButtonType.Submit" Color="ButtonColor.Primary">Save</Button>
+                    <Button Type="ButtonType.Link" To="genre/list" Color="ButtonColor.Secondary">Back</Button>
+                </div>
+
+            </EditForm>
+        </div>
+    </div>
+</div>
+@code {
+    [Parameter]
+    public int id { get; set; }
+
+    protected Genre genre = new Genre();
+
+    protected override void OnParametersSet()
+    {
+        if(id != 0)
+        {
+            genre = GetGenre();
+        }
+    }
+
+    private Genre GetGenre()
+    {
+        Genre g = new Genre();
+        try
+        {
+            string SqlGetGenre = $"SELECT * FROM genres WHERE id = {id}";
+            MySqlConnection conn = DbMySQLUltil.GetMySqlConnection();
+            conn.Open();
+            MySqlCommand cmd = conn.CreateCommand();
+            cmd.CommandText = SqlGetGenre;
+            MySqlDataReader reader = cmd.ExecuteReader();
+            if (reader.Read())
+            {
+                g.Id = reader.GetInt32("id");
+                g.Name = reader.GetString("name");
+            }
+            conn.Close();
+        }
+        catch (Exception ex)
+        {
+
+        }
+        return g;
+    }
+
+    private void HandleUpdateGenre()
+    {
+        string name = genre.Name;
+        try
+        {
+            string SqlUpdateCategory = $"UPDATE genres SET name = '{name}' WHERE id = {id}";
+            MySqlConnection conn = DbMySQLUltil.GetMySqlConnection();
+            conn.Open();
+            MySqlCommand cmd = conn.CreateCommand();
+            cmd.CommandText = SqlUpdateCategory;
+            cmd.ExecuteNonQuery();
+            conn.Close();
+            NavigationManager.NavigateTo("/genre/list");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+        }
+    }
+}
